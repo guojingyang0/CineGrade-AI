@@ -3,13 +3,14 @@ import { ColorAnalysis } from "../types";
 import { Language } from "../App";
 
 // Helper to initialize client safely at runtime
-// This ensures we read the process.env.API_KEY *after* it has been injected by Vite
 const getClient = () => {
+  // Access the injected process.env.API_KEY
   const apiKey = process.env.API_KEY;
+  // We throw here to ensure the catch block in the calling function handles it and displays it to the user
   if (!apiKey) {
-    console.error("API_KEY is missing. Check Vercel Environment Variables.");
+    throw new Error("API_KEY is missing in the application. Please check Vercel Environment Variables.");
   }
-  return new GoogleGenAI({ apiKey: apiKey || "" });
+  return new GoogleGenAI({ apiKey });
 };
 
 // Define the schema for the analysis response
@@ -88,6 +89,7 @@ export const getStyleSuggestions = async (base64Image: string, lang: Language): 
     return [];
   } catch (error) {
     console.error("Suggestion Error:", error);
+    // Silent fail for suggestions, return defaults
     return lang === 'zh' 
       ? ["电影高对比", "复古胶片暖调", "冷调情绪", "自然增强"]
       : ["Cinematic High Contrast", "Warm Vintage", "Cool Moody", "Natural Enhancer"];
@@ -188,8 +190,22 @@ export const generateGradingParams = async (request: GradingRequest, lang: Langu
     }
     throw new Error("No analysis data returned");
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Grading Error:", error);
+    
+    // Construct a helpful error message for the user
+    let errorMsg = "Unknown Error";
+    if (error instanceof Error) {
+        errorMsg = error.message;
+    } else if (typeof error === 'string') {
+        errorMsg = error;
+    }
+
+    if (errorMsg.includes("400")) errorMsg += " (API Key Invalid or Bad Request)";
+    if (errorMsg.includes("403")) errorMsg += " (Permission Denied/Location Restricted)";
+    if (errorMsg.includes("429")) errorMsg += " (Quota Exceeded)";
+    if (errorMsg.includes("500")) errorMsg += " (Google Server Error)";
+
     return {
       contrast: 0,
       saturation: 1,
@@ -197,7 +213,9 @@ export const generateGradingParams = async (request: GradingRequest, lang: Langu
       tint: 0,
       shadowsColor: [0.5, 0.5, 0.5],
       highlightsColor: [0.5, 0.5, 0.5],
-      description: lang === 'zh' ? "生成失败，请检查 API Key 设置 (Vercel Environment Variables)。" : "Generation failed. Please check Vercel API Key settings."
+      description: lang === 'zh' 
+        ? `生成失败: ${errorMsg}` 
+        : `Generation Failed: ${errorMsg}`
     };
   }
 };
