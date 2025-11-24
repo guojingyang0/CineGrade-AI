@@ -2,7 +2,15 @@ import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { ColorAnalysis } from "../types";
 import { Language } from "../App";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper to initialize client safely at runtime
+// This ensures we read the process.env.API_KEY *after* it has been injected by Vite
+const getClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.error("API_KEY is missing. Check Vercel Environment Variables.");
+  }
+  return new GoogleGenAI({ apiKey: apiKey || "" });
+};
 
 // Define the schema for the analysis response
 const analysisSchema: Schema = {
@@ -51,6 +59,7 @@ interface GradingRequest {
  */
 export const getStyleSuggestions = async (base64Image: string, lang: Language): Promise<string[]> => {
   try {
+    const ai = getClient();
     const cleanSource = base64Image.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
     
     const langInstruction = lang === 'zh' 
@@ -90,6 +99,7 @@ export const getStyleSuggestions = async (base64Image: string, lang: Language): 
  */
 export const generateGradingParams = async (request: GradingRequest, lang: Language): Promise<ColorAnalysis> => {
   try {
+    const ai = getClient();
     const cleanSource = request.sourceImage.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
     
     const parts: any[] = [];
@@ -187,13 +197,14 @@ export const generateGradingParams = async (request: GradingRequest, lang: Langu
       tint: 0,
       shadowsColor: [0.5, 0.5, 0.5],
       highlightsColor: [0.5, 0.5, 0.5],
-      description: lang === 'zh' ? "生成失败，使用默认参数。" : "Failed to generate grading. Using defaults."
+      description: lang === 'zh' ? "生成失败，请检查 API Key 设置 (Vercel Environment Variables)。" : "Generation failed. Please check Vercel API Key settings."
     };
   }
 };
 
 export const suggestConversionParams = async (sourceProfile: string, targetProfile: string): Promise<string> => {
     try {
+        const ai = getClient();
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: `I need to convert a LUT or color grade from ${sourceProfile} to ${targetProfile}. Provide a very brief, 2-sentence technical summary.`
