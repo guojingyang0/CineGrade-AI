@@ -1,0 +1,5 @@
+{
+  "name": "Copy of CineGrade AI - 智能调色大师",
+  "description": "基于Gemini AI的下一代色彩分级工具。提供跨设备LUT格式转换，以及基于参考图像的AI智能LUT生成功能，满足专业电影级调色需求。",
+  "requestFramePermissions": []
+}
