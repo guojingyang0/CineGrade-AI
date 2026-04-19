@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="1200" height="475" alt="CineGrade AI Banner" src="./assets/readme-banner.png" />
+  <img width="1200" height="475" alt="CineGrade AI Banner" src="./assets/readme-banner-v2.png" />
 </div>
 
 # CineGrade AI
@@ -167,7 +167,7 @@ CineGrade-AI/
 │   └── generate.js             # Gemini 服务端代理
 ├── types.ts                    # LUT、Profile 与调色参数类型
 └── assets/
-    └── readme-banner.png       # README 展示图
+    └── readme-banner-v2.png    # README 展示图
 ```
 
 ## 一句话总结
